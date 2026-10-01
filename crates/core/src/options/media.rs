@@ -1,4 +1,4 @@
-use std::{fmt, time::Duration};
+use std::{fmt, net::SocketAddr, time::Duration};
 
 use crate::Bitrate;
 
@@ -50,6 +50,12 @@ pub enum RoomMediaLimitsError {
     MaxActiveAudioSpeakersZero,
     #[error("maximum video downloads per receiver must be greater than zero")]
     MaxVideoDownloadsPerReceiverZero,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RtcTcpConfig {
+    pub bind_addr: SocketAddr,
+    pub announced_addr: SocketAddr,
 }
 
 /// Inclusive UDP port range assigned across RTC workers.

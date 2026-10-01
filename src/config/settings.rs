@@ -4,7 +4,7 @@ use std::{
 };
 
 use ipnet::IpNet;
-use o_sfu_core::prelude::Bitrate;
+use o_sfu_core::prelude::{Bitrate, RtcTcpConfig};
 use secrecy::SecretString;
 
 use super::{
@@ -63,12 +63,6 @@ pub struct UserConfig {
     pub outbound_queue_byte_capacity: usize,
     pub room_reservation_ttl: Duration,
     pub departure_grace: Duration,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RtcTcpConfig {
-    pub bind_addr: SocketAddr,
-    pub announced_addr: SocketAddr,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,8 +1,12 @@
 //! media transport construction and startup validation
 
-use std::sync::Arc;
+use std::{
+    net::{SocketAddr, TcpListener, TcpStream},
+    sync::Arc,
+};
 
 use thiserror::Error;
+use tracing::warn;
 
 use super::{
     MediaTransport, SourcePolicySignal,
@@ -64,6 +68,21 @@ impl MediaTransport {
                 .map_err(|_error| MediaTransportBuildError::InvalidRtpProfile)?,
         );
         let source_policy_signal = SourcePolicySignal::default();
+        let tcp_listener = config
+            .rtc_tcp_config
+            .map(|c| {
+                let addr = c.bind_addr;
+                let listener = TcpListener::bind(addr).map_err(|error| {
+                    warn!(%addr, ?error, "failed to bind rtc TCP listener");
+                    MediaTransportBuildError::TcpBind { addr }
+                })?;
+                listener.set_nonblocking(true).map_err(|error| {
+                    warn!(%addr, ?error, "failed to set rtc TCP listener as non-blocking");
+                    MediaTransportBuildError::TcpSetNonBlocking
+                })?;
+                Ok(listener)
+            })
+            .transpose()?;
         let workers: Arc<[_]> = (0_u16..u16::MAX)
             .zip(worker_ranges)
             .map(|(worker_index, range)| {
@@ -122,4 +141,8 @@ pub enum MediaTransportBuildError {
     /// one worker could not create its runtime or bind its assigned UDP range
     #[error("media transport worker {worker_index} failed to start")]
     WorkerStartup { worker_index: usize },
+    #[error("media transport failed to bind to TCP address: {addr}")]
+    TcpBind { addr: SocketAddr },
+    #[error("media transport failed to set the TCP listener as non-blocking")]
+    TcpSetNonBlocking,
 }
