@@ -66,12 +66,19 @@ pub struct UserConfig {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RtcTcpConfig {
+    pub bind_addr: SocketAddr,
+    pub announced_addr: SocketAddr,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TransportConfig {
     pub announced_ip: IpAddr,
     pub max_bitrate_in: Bitrate,
     pub max_bitrate_out: Bitrate,
     pub video_bitrate_limits: VideoBitrateLimits,
     pub rtc_port_range: RtcPortRange,
+    pub rtc_tcp_config: Option<RtcTcpConfig>,
     pub rtc_udp_io_backend: RtcUdpIoBackend,
     pub rtc_media_worker_count: usize,
     pub room_worker_policy: RoomWorkerPolicy,

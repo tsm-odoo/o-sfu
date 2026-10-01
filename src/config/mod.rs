@@ -24,8 +24,8 @@ pub use self::{
     settings::{
         AuthConfig, CodecConfig, Config, DEFAULT_AUTHENTICATION_TIMEOUT_MS,
         DEFAULT_MAX_PRE_AUTH_WEBSOCKET_SESSIONS,
-        DEFAULT_MAX_PRE_AUTH_WEBSOCKET_SESSIONS_PER_ORIGIN, HttpConfig, TransportConfig,
-        UserConfig,
+        DEFAULT_MAX_PRE_AUTH_WEBSOCKET_SESSIONS_PER_ORIGIN, HttpConfig, RtcTcpConfig,
+        TransportConfig, UserConfig,
     },
     telemetry::{TelemetryConfig, TelemetryLogFormat, TelemetryResource, TraceExportConfig},
 };

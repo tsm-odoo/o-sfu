@@ -576,6 +576,8 @@ RTC transport:
 | `RTC_MIN_PORT` | `40000` | lower bound for the RTC UDP port range |
 | `RTC_MAX_PORT` | `49999` | upper bound for the RTC UDP port range |
 | `RTC_UDP_IO_BACKEND` | `tokio` | UDP socket backend for RTC workers, either `tokio` or Linux-only `io_uring` |
+| `RTC_TCP_BIND_ADDRESS` | unset | `ip:port` the RTC TCP listener binds to. Setting it enables TCP and adds one passive TCP host candidate to every offer. Unset binds no listener and offers carry no TCP candidate. Not supported with `RTC_UDP_IO_BACKEND=io_uring` |
+| `RTC_TCP_ANNOUNCED_ADDRESS` | `ANNOUNCED_IP` with the `RTC_TCP_BIND_ADDRESS` port | concrete `ip:port` advertised as the TCP candidate, for deployments where the public TCP port differs from the bound one. Requires `RTC_TCP_BIND_ADDRESS` |
 | `RTC_MEDIA_WORKER_COUNT` | available parallelism | number of RTC media workers, falling back to `1` when the host cannot report available parallelism |
 | `MAX_BITRATE_IN` | `8000000` | maximum incoming bitrate in bps per user |
 | `MAX_BITRATE_OUT` | `10000000` | receiver-side BWE ceiling in bps per user |
