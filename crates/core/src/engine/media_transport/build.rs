@@ -1,17 +1,14 @@
 //! media transport construction and startup validation
 
-use std::{
-    net::{SocketAddr, TcpListener, TcpStream},
-    sync::Arc,
-};
+use std::{io, net::TcpListener, sync::Arc};
 
 use thiserror::Error;
-use tracing::warn;
+use tracing::info;
 
 use super::{
     MediaTransport, SourcePolicySignal,
     config::{MediaTransportConfig, MediaTransportDeps},
-    rtc::{RtcWorker, RtpProfile},
+    rtc::{RtcWorker, RtpProfile, TcpAcceptor},
 };
 use crate::{MediaWorkerId, RtcUdpIoBackend};
 
@@ -68,21 +65,6 @@ impl MediaTransport {
                 .map_err(|_error| MediaTransportBuildError::InvalidRtpProfile)?,
         );
         let source_policy_signal = SourcePolicySignal::default();
-        let tcp_listener = config
-            .rtc_tcp_config
-            .map(|c| {
-                let addr = c.bind_addr;
-                let listener = TcpListener::bind(addr).map_err(|error| {
-                    warn!(%addr, ?error, "failed to bind rtc TCP listener");
-                    MediaTransportBuildError::TcpBind { addr }
-                })?;
-                listener.set_nonblocking(true).map_err(|error| {
-                    warn!(%addr, ?error, "failed to set rtc TCP listener as non-blocking");
-                    MediaTransportBuildError::TcpSetNonBlocking
-                })?;
-                Ok(listener)
-            })
-            .transpose()?;
         let workers: Arc<[_]> = (0_u16..u16::MAX)
             .zip(worker_ranges)
             .map(|(worker_index, range)| {
@@ -102,6 +84,21 @@ impl MediaTransport {
                 })
             })
             .collect::<Result<_, _>>()?;
+        let tcp_acceptor = config
+            .rtc_tcp_config
+            .map(|c| {
+                let addr = c.bind_addr;
+                let listener = TcpListener::bind(addr)?;
+                listener.set_nonblocking(true)?;
+                let acceptor = TcpAcceptor::spawn(listener).map(Arc::new);
+                info!(
+                    "booted rtc TCP listener bind_addr={} candidate_addr={}",
+                    addr, c.announced_addr,
+                );
+                acceptor
+            })
+            .transpose()
+            .map_err(|error| MediaTransportBuildError::TcpAcceptorStartup { kind: error.kind() })?;
         Ok(Self {
             workers,
             profile,
@@ -111,6 +108,7 @@ impl MediaTransport {
             #[cfg(any(test, feature = "testing-transport"))]
             source_diagnostics_requests: Arc::default(),
             source_policy_signal,
+            tcp_acceptor,
         })
     }
 }
@@ -141,8 +139,7 @@ pub enum MediaTransportBuildError {
     /// one worker could not create its runtime or bind its assigned UDP range
     #[error("media transport worker {worker_index} failed to start")]
     WorkerStartup { worker_index: usize },
-    #[error("media transport failed to bind to TCP address: {addr}")]
-    TcpBind { addr: SocketAddr },
-    #[error("media transport failed to set the TCP listener as non-blocking")]
-    TcpSetNonBlocking,
+    /// the TCP listener could not be bound or the acceptor thread could not start
+    #[error("media transport failed to start the TCP acceptor: {kind}")]
+    TcpAcceptorStartup { kind: io::ErrorKind },
 }

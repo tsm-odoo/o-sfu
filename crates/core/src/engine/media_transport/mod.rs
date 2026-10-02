@@ -78,7 +78,7 @@ pub(crate) use types::{SourceActivityRevision, SourceActivityUpdate};
 
 pub(crate) use self::workers::WorkerPlacementState;
 use self::workers::signaling_to_str0m_media_kind;
-use crate::engine::metrics::RuntimeMetrics;
+use crate::engine::{media_transport::rtc::TcpAcceptor, metrics::RuntimeMetrics};
 
 /// Opaque runtime media transport handle.
 ///
@@ -101,6 +101,7 @@ pub struct MediaTransport {
     source_diagnostics_requests: Arc<AtomicUsize>,
     /// Coalesces transport observations for room policy.
     source_policy_signal: SourcePolicySignal,
+    tcp_acceptor: Option<Arc<TcpAcceptor>>,
 }
 
 #[derive(Debug, Clone, Copy)]
